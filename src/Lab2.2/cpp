@@ -19,7 +19,7 @@
 
 int main(void)
 {
-    setlocale(0, ""); // чтобы буквы нормальные были
+    setlocale(0,''); // чтобы буквы нормальные были
     int current_day = 1;
     int current_hour = 8;
 
