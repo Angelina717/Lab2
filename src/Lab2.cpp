@@ -53,7 +53,7 @@ int main(void)
             choice = -1;   /* чтобы не выйти из цикла случайно */
             continue;
         }
-        while ((c = getchar()) != '\n' && c != EOF) {} // бесконечный цикл
+        while ((c = getchar()) != '\n' && c != EOF) {}
         switch (choice) {
 
             /* ===== [0] Выход ===== */
