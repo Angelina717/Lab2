@@ -455,46 +455,57 @@ void check_craft_recipes(void)
     fclose(fin);
     fclose(fout);
 }
+/*  Меню  */
+
+void print_menu(void)
+{
+    printf("\n Меню (Фермер: %s | День %d, %02d:00) \n",
+        farmer_name, current_day, current_hour);
+    printf("[0] Выход\n");
+    printf("[1] Посмотреть на часы\n");
+    printf("[2] Промотать время (Поработать)\n");
+    printf("[3] Посмотреть инвентарь\n");
+    printf("[4] Положить предмет в слот\n");
+    printf("[5] Выбросить предмет\n");
+    printf("[6] Очистка от мусора\n");
+    printf("[7] Поиск предмета в рюкзаке по названию\n");
+    printf("[8] Записать состояние в дневник фермера\n");
+    printf("[9] Проверить рецепты крафта (вариант 6)\n");
+    printf("Выберите пункт: ");
+}
 
 int main(void)
 {
-    setlocale(0, ""); // чтобы буквы нормальные были
-    int current_day = 1;
-    int current_hour = 8;
-    /* Статический массив инвентаря на 10 элементов */
-    int inventory[INVENTORY_SIZE] = {
-        ITEM_EMPTY,  ITEM_WOOD, ITEM_STONE, ITEM_SEEDS,
-        ITEM_IRON,  ITEM_GOLD, ITEM_APPLE, ITEM_POTION,
-        ITEM_ROPE, ITEM_TORCH
-    };
+    setlocale(LC_CTYPE, "rus"); // чтобы буквы нормальные были 
+    system("chcp 1251 > nul"); // чтобы буквы нормальные были 
+    printf(" Весёлый фермер: лабораторная №3 \n");
+    load_items_from_file();
+    ask_farmer_name();
 
     int choice = -1;
-    int i;          /* счётчик циклов */
-    int c;          /* для очистки потока ввода */
-    
     while (choice != 0) {
-    
-        /* --- Меню --- */
-        printf("\n=== Меню ===\n");
-        printf("[0] Выход\n");
-        printf("[1] Посмотреть на часы\n");
-        printf("[2] Промотать время (Поработать)\n");
-        printf("[3] Посмотреть инвентарь\n");
-        printf("[4] Положить предмет в слот\n");
-        printf("[5] Выбросить предмет\n");
-        printf("[6] Очистка от мусора\n");
-        printf("Выберите пункт: ");
-        switch (choice) {
+        print_menu();
 
-            /* ===== [0] Выход ===== */
-        case 0:
-            printf("Выход из игры. Пока!\n");
-            break;
-      
-              /* ===== Неверный пункт ===== */
-        default:
-            printf("Нет такого пункта меню.\n");
-            break;
+        if (scanf("%d", &choice) != 1) {
+            clear_input();
+            printf("Ошибка ввода! Введите число.\n");
+            choice = -1;
+            continue;
+        }
+        clear_input();
+
+        switch (choice) {
+        case 0: printf("Выход из игры. Пока, %s!\n", farmer_name); break;
+        case 1: show_clock();          break;
+        case 2: pass_time();           break;
+        case 3: print_inventory();     break;
+        case 4: put_item();            break;
+        case 5: drop_item();           break;
+        case 6: clear_trash();         break;
+        case 7: find_item_by_name();   break;
+        case 8: write_diary();         break;
+        case 9: check_craft_recipes(); break;
+        default: printf("Нет такого пункта меню.\n"); break;
         }
     }
 
