@@ -1,9 +1,16 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <locale.h>
 
-#define INVENTORY_SIZE 10
+/* Константы */
+#define INVENTORY_SIZE   10
+#define MAX_ITEMS        10
+#define MAX_NAME_LEN     32
+#define MAX_FARMER_NAME  33    /* 32 символа + '\0' */
+#define MAX_LINE_LEN     256
+#define MAX_INGREDIENTS  16
 
 /* ID предметов */
 #define ITEM_EMPTY   0
@@ -17,6 +24,17 @@
 #define ITEM_ROPE    8
 #define ITEM_TORCH   9
 
+/* Имена файлов */
+#define ITEMS_FILE   "items.txt"
+#define INPUT_FILE   "input.txt"
+#define OUTPUT_FILE  "output.txt"
+#define DIARY_FILE   "diary.txt"
+
+/*  Глобальные данные  */
+char item_names[MAX_ITEMS][MAX_NAME_LEN];
+char farmer_name[MAX_FARMER_NAME] = "Фермер";
+int  current_day = 1;
+int  current_hour = 8;
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
