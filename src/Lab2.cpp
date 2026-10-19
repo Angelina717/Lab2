@@ -143,6 +143,16 @@ const char* get_item_name(int id)
     return item_names[id];
 }
 
+/*  Вывод инвентаря с названиями */
+
+void print_inventory(void)
+{
+    printf("\n--- Инвентарь ---\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        printf("Слот %d: [%d] - %s\n",
+            i, inventory[i], get_item_name(inventory[i]));
+    }
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
@@ -213,27 +223,6 @@ int main(void)
                 hours, current_day, current_hour);
             break;
         }
-
-              /* ===== [3] Посмотреть инвентарь ===== */
-        case 3:
-            for (i = 0; i < INVENTORY_SIZE; i++) {
-                printf("Слот %d: [%d]", i, inventory[i]);
-
-                switch (inventory[i]) {
-                case ITEM_EMPTY:   printf(" (Пусто)");  break;
-                case ITEM_WOOD:  printf(" (Дерево)");  break;
-                case ITEM_STONE:  printf(" (Камень)");  break;
-                case ITEM_SEEDS:   printf(" (Семена)");  break;
-                case ITEM_IRON:   printf(" (Железо)");  break;
-                case ITEM_GOLD:  printf(" (Серебро)");  break;
-                case ITEM_APPLE: printf(" (Яблоко)");   break;
-                case ITEM_POTION:   printf(" (Зелье)"); break;
-                case ITEM_ROPE:  printf(" (Верёвка)");   break;
-                case ITEM_TORCH:  printf(" (Факел)");   break;
-                default:          printf(" (?)");       break;
-                }
-
-                printf("\n");
             }
             break;
 
