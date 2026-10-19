@@ -271,6 +271,31 @@ void find_item_by_name(void)
         printf("В рюкзаке такого предмета нет.\n");
     }
 }
+
+/*  Дневник фермера  */
+
+void write_diary(void)
+{
+    FILE* f = fopen(DIARY_FILE, "a");
+    if (f == NULL) {
+        printf("Не удалось открыть %s для записи!\n", DIARY_FILE);
+        return;
+    }
+
+    fprintf(f, "=== Запись дневника ===\n");
+    fprintf(f, "Фермер: %s\n", farmer_name);
+    fprintf(f, "День %d, %02d:00\n", current_day, current_hour);
+    fprintf(f, "Инвентарь:\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        fprintf(f, "  Слот %d: [%d] - %s\n",
+            i, inventory[i], get_item_name(inventory[i]));
+    }
+    fprintf(f, "\n");
+
+    fclose(f);
+    printf("Состояние записано в %s.\n", DIARY_FILE);
+}
+
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
