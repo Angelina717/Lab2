@@ -177,6 +177,37 @@ void pass_time(void)
     printf("Прошло %d ч. Теперь: День %d, %02d:00\n",
         hours, current_day, current_hour);
 }
+
+/* Работа с инвентарём */
+/* Положить предмет в слот*/
+void put_item(void)
+{
+    int slot, id;
+    if (!read_int("Индекс слота (0-9): ", &slot)) return;
+    if (slot < 0 || slot >= INVENTORY_SIZE) {
+        printf("Индекс вне диапазона!\n");
+        return;
+    }
+    if (!read_int("ID предмета: ", &id)) return;
+    if (id < 0 || id >= MAX_ITEMS) {
+        printf("Недопустимый ID!\n");
+        return;
+    }
+    inventory[slot] = id;
+    printf("Предмет \"%s\" помещён в слот %d.\n", get_item_name(id), slot);
+}
+/* Выбросить предмет*/
+void drop_item(void)
+{
+    int slot;
+    if (!read_int("Индекс слота для удаления (0-9): ", &slot)) return;
+    if (slot < 0 || slot >= INVENTORY_SIZE) {
+        printf("Индекс вне диапазона!\n");
+        return;
+    }
+    inventory[slot] = ITEM_EMPTY;
+    printf("Слот %d очищен.\n", slot);
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
@@ -211,58 +242,6 @@ int main(void)
         case 0:
             printf("Выход из игры. Пока!\n");
             break;
-
-            /* ===== [4] Положить предмет в слот ===== */
-        case 4: {
-            int slot, id;
-
-            printf("Индекс слота (0-9): ");
-            if (scanf("%d", &slot) != 1) {
-                while ((c = getchar()) != '\n' && c != EOF) {}
-                printf("Ошибка ввода!\n");
-                break;
-            }
-            while ((c = getchar()) != '\n' && c != EOF) {}
-
-            if (slot < 0 || slot >= INVENTORY_SIZE) {
-                printf("Индекс вне диапазона!\n");
-                break;
-            }
-
-            printf("ID предмета: ");
-            if (scanf("%d", &id) != 1) {
-                while ((c = getchar()) != '\n' && c != EOF) {}
-                printf("Ошибка ввода!\n");
-                break;
-            }
-            while ((c = getchar()) != '\n' && c != EOF) {}
-
-            inventory[slot] = id;
-            printf("Предмет %d помещён в слот %d.\n", id, slot);
-            break;
-        }
-
-              /* ===== [5] Выбросить предмет ===== */
-        case 5: {
-            int slot;
-
-            printf("Индекс слота для удаления (0-9): ");
-            if (scanf("%d", &slot) != 1) {
-                while ((c = getchar()) != '\n' && c != EOF) {}
-                printf("Ошибка ввода!\n");
-                break;
-            }
-            while ((c = getchar()) != '\n' && c != EOF) {}
-
-            if (slot < 0 || slot >= INVENTORY_SIZE) {
-                printf("Индекс вне диапазона!\n");
-                break;
-            }
-
-            inventory[slot] = ITEM_EMPTY;
-            printf("Слот %d очищен.\n", slot);
-            break;
-        }
 
               /* ===== [6] Очистка от мусора ===== */
         case 6: {
