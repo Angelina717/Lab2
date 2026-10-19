@@ -208,6 +208,29 @@ void drop_item(void)
     inventory[slot] = ITEM_EMPTY;
     printf("Слот %d очищен.\n", slot);
 }
+
+}
+/* Очистка мусора */
+void clear_trash(void)
+{
+    int id;
+    if (!read_int("Введите ID предмета для удаления: ", &id)) return;
+
+    printf("\nИнвентарь до очистки:\n");
+    print_inventory();
+
+    int cleared = 0;
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        if (inventory[i] == id && id != ITEM_EMPTY) {
+            inventory[i] = ITEM_EMPTY;
+            cleared++;
+        }
+    }
+
+    printf("\nИнвентарь после очистки:\n");
+    print_inventory();
+    printf("Очищено слотов: %d\n", cleared);
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
@@ -242,76 +265,7 @@ int main(void)
         case 0:
             printf("Выход из игры. Пока!\n");
             break;
-
-              /* ===== [6] Очистка от мусора ===== */
-        case 6: {
-            int id;
-            int cleared = 0;
-
-            printf("Введите ID предмета для удаления: ");
-            if (scanf("%d", &id) != 1) {
-                while ((c = getchar()) != '\n' && c != EOF) {}
-                printf("Ошибка ввода!\n");
-                break;
-            }
-            while ((c = getchar()) != '\n' && c != EOF) {}
-
-            /* --- Инвентарь до очистки --- */
-            printf("\nИнвентарь до очистки:\n");
-            for (i = 0; i < INVENTORY_SIZE; i++) {
-                printf("Слот %d: [%d]", i, inventory[i]);
-
-                switch (inventory[i]) {
-                case ITEM_EMPTY:   printf(" (Пусто)");  break;
-                case ITEM_WOOD:  printf(" (Дерево)");  break;
-                case ITEM_STONE:  printf(" (Камень)");  break;
-                case ITEM_SEEDS:   printf(" (Семена)");  break;
-                case ITEM_IRON:   printf(" (Железо)");  break;
-                case ITEM_GOLD:  printf(" (Серебро)");  break;
-                case ITEM_APPLE: printf(" (Яблоко)");   break;
-                case ITEM_POTION:   printf(" (Зелье)"); break;
-                case ITEM_ROPE:  printf(" (Верёвка)");   break;
-                case ITEM_TORCH:  printf(" (Факел)");   break;
-                default:          printf(" (?)");       break;
-                }
-
-                printf("\n");
-            }
-
-            /* --- Замена всех вхождений id на 0 --- */
-            for (i = 0; i < INVENTORY_SIZE; i++) {
-                if (inventory[i] == id && id != ITEM_EMPTY) {
-                    inventory[i] = ITEM_EMPTY;
-                    cleared++;
-                }
-            }
-
-            /* --- Инвентарь после очистки --- */
-            printf("\nИнвентарь после очистки:\n");
-            for (i = 0; i < INVENTORY_SIZE; i++) {
-                printf("Слот %d: [%d]", i, inventory[i]);
-
-                switch (inventory[i]) {
-                case ITEM_EMPTY:   printf(" (Пусто)");  break;
-                case ITEM_WOOD:  printf(" (Дерево)");  break;
-                case ITEM_STONE:  printf(" (Камень)");  break;
-                case ITEM_SEEDS:   printf(" (Семена)");  break;
-                case ITEM_IRON:   printf(" (Железо)");  break;
-                case ITEM_GOLD:  printf(" (Серебро)");  break;
-                case ITEM_APPLE: printf(" (Яблоко)");   break;
-                case ITEM_POTION:   printf(" (Зелье)"); break;
-                case ITEM_ROPE:  printf(" (Верёвка)");   break;
-                case ITEM_TORCH:  printf(" (Факел)");   break;
-                default:          printf(" (?)");       break;
-                }
-
-                printf("\n");
-            }
-
-            printf("Очищено слотов: %d\n", cleared);
-            break;
-        }
-
+      
               /* ===== Неверный пункт ===== */
         default:
             printf("Нет такого пункта меню.\n");
