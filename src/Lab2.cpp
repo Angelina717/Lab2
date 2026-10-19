@@ -74,6 +74,20 @@ static void read_line(const char* prompt, char* buf, size_t size)
     }
 }
 
+/*  Имя фермера  */
+
+void ask_farmer_name(void)
+{
+    char buf[MAX_FARMER_NAME];
+    read_line("Введите имя фермера (до 32 символов): ", buf, sizeof(buf));
+    if (strlen(buf) == 0) {
+        printf("Имя не введено, оставляем \"%s\".\n", farmer_name);
+        return;
+    }
+    strncpy(farmer_name, buf, MAX_FARMER_NAME - 1);
+    farmer_name[MAX_FARMER_NAME - 1] = '\0';
+    printf("Привет, %s!\n", farmer_name);
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
