@@ -88,6 +88,61 @@ void ask_farmer_name(void)
     farmer_name[MAX_FARMER_NAME - 1] = '\0';
     printf("Привет, %s!\n", farmer_name);
 }
+
+/*  Каталог предметов из items.txt  */
+
+void load_default_items(void)
+{
+    const char* defs[MAX_ITEMS] = {
+        "Пусто", "Дерево", "Камень", "Семена", "Железо",
+        "Золото", "Яблоко", "Зелье", "Верёвка", "Факел"
+    };
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        strncpy(item_names[i], defs[i], MAX_NAME_LEN - 1);
+        item_names[i][MAX_NAME_LEN - 1] = '\0';
+    }
+}
+
+void load_items_from_file(void)
+{
+    load_default_items();  /* сразу заполняем значениями по умолчанию */
+    return;
+    FILE* f = fopen(ITEMS_FILE, "r");
+    if (f == NULL) {
+        printf("[!] Файл %s не найден. Используем названия по умолчанию.\n",
+            ITEMS_FILE);
+        return;
+    }
+
+    char line[MAX_LINE_LEN];
+    int  idx = 0;
+
+    while (idx < MAX_ITEMS && fgets(line, sizeof(line), f) != NULL) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+            line[--len] = '\0';
+        }
+        if (len == 0) continue;
+
+        strncpy(item_names[idx], line, MAX_NAME_LEN - 1);
+        item_names[idx][MAX_NAME_LEN - 1] = '\0';
+        idx++;
+    }
+    fclose(f);
+
+    printf("Загружено названий из %s: %d.\n", ITEMS_FILE, idx);
+    if (idx < MAX_ITEMS) {
+        printf("[!] Строк меньше %d — остальные взяты по умолчанию.\n",
+            MAX_ITEMS);
+    }
+}
+
+const char* get_item_name(int id)
+{
+    if (id < 0 || id >= MAX_ITEMS) return "?";
+    return item_names[id];
+}
+
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
