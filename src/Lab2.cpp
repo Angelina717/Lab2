@@ -296,6 +296,166 @@ void write_diary(void)
     printf("Состояние записано в %s.\n", DIARY_FILE);
 }
 
+/* Проверка рецептов крафта  */
+
+typedef struct {
+    char name[MAX_NAME_LEN];
+    int  ingredients[MAX_INGREDIENTS];
+    int  ing_count;
+} Recipe;
+
+/* Сколько раз предмет с данным ID лежит в инвентаре */
+static int count_in_inventory(int id)
+{
+    int cnt = 0;
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        if (inventory[i] == id) cnt++;
+    }
+    return cnt;
+}
+
+/*  строки вида "Название: ID1 ID2 ID3".
+   Возвращает 1 при успехе, 0 при ошибке формата. */
+static int parse_recipe_line(const char* line, Recipe* r)
+{
+    r->ing_count = 0;
+    r->name[0] = '\0';
+
+    const char* colon = strchr(line, ':');
+    if (colon == NULL) return 0;
+
+    size_t name_len = (size_t)(colon - line);
+    if (name_len == 0 || name_len >= MAX_NAME_LEN) return 0;
+
+    strncpy(r->name, line, name_len);
+    r->name[name_len] = '\0';
+
+    /* Обрезаем пробелы справа в имени */
+    while (name_len > 0 && r->name[name_len - 1] == ' ') {
+        r->name[--name_len] = '\0';
+    }
+
+    /* Разбор компонентов */
+    const char* p = colon + 1;
+    while (*p != '\0') {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') break;
+
+        if (*p < '0' || *p > '9') return 0;
+
+        int val = 0;
+        while (*p >= '0' && *p <= '9') {
+            val = val * 10 + (*p - '0');
+            p++;
+        }
+
+        if (r->ing_count >= MAX_INGREDIENTS) return 0;
+        r->ingredients[r->ing_count++] = val;
+    }
+
+    if (r->ing_count == 0) return 0;
+    return 1;
+}
+
+void check_craft_recipes(void)
+{
+    FILE* fin = fopen(INPUT_FILE, "r");
+    if (fin == NULL) {
+        printf("[!] Файл %s не найден. Проверка рецептов невозможна.\n",
+            INPUT_FILE);
+        return;
+    }
+
+    FILE* fout = fopen(OUTPUT_FILE, "w");
+    if (fout == NULL) {
+        printf("[!] Не удалось открыть %s для записи.\n", OUTPUT_FILE);
+        fclose(fin);
+        return;
+    }
+
+    printf("\n Проверка рецептов крафта \n");
+    fprintf(fout, " Проверка рецептов крафта \n");
+    fprintf(fout, "Фермер: %s | День %d, %02d:00\n\n",
+        farmer_name, current_day, current_hour);
+
+    char line[MAX_LINE_LEN];
+    int  line_no = 0;
+    int  total = 0, available = 0, not_enough = 0;
+
+    while (fgets(line, sizeof(line), fin) != NULL) {
+        line_no++;
+
+        size_t len = strlen(line);
+        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+            line[--len] = '\0';
+        }
+        if (len == 0) continue;         /* пустые строки пропускаем */
+        if (line[0] == '#') continue;   /* комментарии пропускаем */
+
+        Recipe r;
+        if (!parse_recipe_line(line, &r)) {
+            printf("Строка %d: некорректный формат, пропущено.\n", line_no);
+            fprintf(fout, "Строка %d: [ОШИБКА ФОРМАТА] %s\n", line_no, line);
+            continue;
+        }
+
+        total++;
+
+        /* Сколько каждого ID требуется */
+        int need[MAX_ITEMS] = { 0 };
+        for (int i = 0; i < r.ing_count; i++) {
+            int id = r.ingredients[i];
+            if (id < 0 || id >= MAX_ITEMS) continue;
+            need[id]++;
+        }
+
+        /* Что и в каком количестве не хватает */
+        int missing_ids[MAX_ITEMS];
+        int missing_cnt[MAX_ITEMS];
+        int missing_total = 0;
+
+        for (int id = 0; id < MAX_ITEMS; id++) {
+            if (need[id] == 0) continue;
+            int have = count_in_inventory(id);
+            if (have < need[id]) {
+                missing_ids[missing_total] = id;
+                missing_cnt[missing_total] = need[id] - have;
+                missing_total++;
+            }
+        }
+
+        /* Формируем вердикт */
+        char verdict[MAX_LINE_LEN];
+        if (missing_total == 0) {
+            available++;
+            snprintf(verdict, sizeof(verdict), "[ДОСТУПНО]");
+        }
+        else {
+            not_enough++;
+            int pos = snprintf(verdict, sizeof(verdict),
+                "[НЕ ХВАТАЕТ РЕСУРСОВ]");
+            for (int i = 0; i < missing_total && pos < (int)sizeof(verdict); i++) {
+                pos += snprintf(verdict + pos, sizeof(verdict) - pos,
+                    " %s x%d",
+                    get_item_name(missing_ids[i]),
+                    missing_cnt[i]);
+            }
+        }
+
+        printf("%s: %s\n", r.name, verdict);
+        fprintf(fout, "%s: %s\n", r.name, verdict);
+    }
+
+    fprintf(fout, "\nИтого рецептов: %d | Доступно: %d | Не хватает: %d\n",
+        total, available, not_enough);
+    printf("\nИтого рецептов: %d | Доступно: %d | Не хватает: %d\n",
+        total, available, not_enough);
+    printf("Результат сохранён в %s.\n", OUTPUT_FILE);
+
+    fclose(fin);
+    fclose(fout);
+}
+
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
