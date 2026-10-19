@@ -35,6 +35,45 @@ char item_names[MAX_ITEMS][MAX_NAME_LEN];
 char farmer_name[MAX_FARMER_NAME] = "Фермер";
 int  current_day = 1;
 int  current_hour = 8;
+int inventory[INVENTORY_SIZE] = {
+    ITEM_EMPTY, ITEM_WOOD, ITEM_STONE, ITEM_SEEDS,
+    ITEM_IRON,  ITEM_GOLD, ITEM_APPLE, ITEM_POTION,
+    ITEM_ROPE,  ITEM_TORCH
+};
+
+/*  защита от «дурака»  */
+
+static void clear_input(void)
+{
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {}
+}
+
+static int read_int(const char* prompt, int* out)
+{
+    printf("%s", prompt);
+    if (scanf("%d", out) != 1) {
+        clear_input();
+        printf("Ошибка ввода! Введите число.\n");
+        return 0;
+    }
+    clear_input();
+    return 1;
+}
+
+static void read_line(const char* prompt, char* buf, size_t size)
+{
+    printf("%s", prompt);
+    if (fgets(buf, (int)size, stdin) == NULL) {
+        buf[0] = '\0';
+        return;
+    }
+    size_t len = strlen(buf);
+    if (len > 0 && buf[len - 1] == '\n') {
+        buf[len - 1] = '\0';
+    }
+}
+
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
@@ -63,15 +102,6 @@ int main(void)
         printf("[5] Выбросить предмет\n");
         printf("[6] Очистка от мусора\n");
         printf("Выберите пункт: ");
-    
-        /* --- Защита от «дурака» --- */
-        if (scanf("%d", &choice) != 1) {
-            while ((c = getchar()) != '\n' && c != EOF) {}
-            printf("Ошибка ввода! Введите число.\n");
-            choice = -1;   /* чтобы не выйти из цикла случайно */
-            continue;
-        }
-        while ((c = getchar()) != '\n' && c != EOF) {}
         switch (choice) {
 
             /* ===== [0] Выход ===== */
