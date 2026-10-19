@@ -231,6 +231,46 @@ void clear_trash(void)
     print_inventory();
     printf("Очищено слотов: %d\n", cleared);
 }
+
+/*  Поиск предмета по названию */
+
+void find_item_by_name(void)
+{
+    char query[MAX_NAME_LEN];
+    read_line("Введите название предмета: ", query, sizeof(query));
+
+    if (strlen(query) == 0) {
+        printf("Пустой запрос.\n");
+        return;
+    }
+
+    int found_id = -1;
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (strcmp(item_names[i], query) == 0) {
+            found_id = i;
+            break;
+        }
+    }
+
+    if (found_id == -1) {
+        printf("Предмет \"%s\" не найден в каталоге.\n", query);
+        return;
+    }
+
+    printf("ID предмета \"%s\" = %d. Ищем в рюкзаке...\n", query, found_id);
+
+    int found_any = 0;
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        if (inventory[i] == found_id) {
+            printf("  Найдено в слоте %d\n", i);
+            found_any = 1;
+        }
+    }
+
+    if (!found_any) {
+        printf("В рюкзаке такого предмета нет.\n");
+    }
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
