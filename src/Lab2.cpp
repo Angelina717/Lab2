@@ -153,6 +153,30 @@ void print_inventory(void)
             i, inventory[i], get_item_name(inventory[i]));
     }
 }
+
+/*  Часы  */
+
+void show_clock(void)
+{
+    printf("Текущее время: День %d, %02d:00\n", current_day, current_hour);
+}
+
+void pass_time(void)
+{
+    int hours;
+    if (!read_int("Сколько часов работаем? ", &hours)) return;
+    if (hours < 0) {
+        printf("Часы не могут быть отрицательными.\n");
+        return;
+    }
+    current_hour += hours;
+    while (current_hour >= 24) {
+        current_hour -= 24;
+        current_day++;
+    }
+    printf("Прошло %d ч. Теперь: День %d, %02d:00\n",
+        hours, current_day, current_hour);
+}
 int main(void)
 {
     setlocale(0, ""); // чтобы буквы нормальные были
@@ -186,44 +210,6 @@ int main(void)
             /* ===== [0] Выход ===== */
         case 0:
             printf("Выход из игры. Пока!\n");
-            break;
-
-            /* ===== [1] Посмотреть на часы ===== */
-        case 1:
-            printf("Текущее время: День %d, %02d:00\n",
-                current_day, current_hour);
-            break;
-
-            /* ===== [2] Промотать время (Поработать) ===== */
-        case 2: {
-            int hours;
-            printf("Сколько часов работаем? ");
-
-            if (scanf("%d", &hours) != 1) {
-                while ((c = getchar()) != '\n' && c != EOF) {}
-                printf("Ошибка ввода!\n");
-                break;
-            }
-            while ((c = getchar()) != '\n' && c != EOF) {}
-
-            if (hours < 0) {
-                printf("Часы не могут быть отрицательными.\n");
-                break;
-            }
-
-            current_hour += hours;
-
-            /* Корректный перевод часов в дни */
-            while (current_hour >= 24) {
-                current_hour -= 24;
-                current_day++;
-            }
-
-            printf("Прошло %d ч. Теперь: День %d, %02d:00\n",
-                hours, current_day, current_hour);
-            break;
-        }
-            }
             break;
 
             /* ===== [4] Положить предмет в слот ===== */
