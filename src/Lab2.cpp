@@ -281,7 +281,17 @@ void write_diary(void)
         printf("Не удалось открыть %s для записи!\n", DIARY_FILE);
         return;
     }
-
+     /* вывод на экран*/
+     printf("\n=== Запись дневника ===\n");
+     printf("Фермер: %s\n", farmer_name);
+     printf("День %d, %02d:00\n", current_day, current_hour);
+     printf("Инвентарь:\n");
+     for (int i = 0; i < INVENTORY_SIZE; i++) {
+         printf("  Слот %d: [%d] - %s\n",
+             i, inventory[i], get_item_name(inventory[i]));
+     }
+     printf("\n");
+     /* запись в файл */
     fprintf(f, "=== Запись дневника ===\n");
     fprintf(f, "Фермер: %s\n", farmer_name);
     fprintf(f, "День %d, %02d:00\n", current_day, current_hour);
