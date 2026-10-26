@@ -763,7 +763,8 @@ void print_menu(void)
     printf("[6] Очистка от мусора\n");
     printf("[7] Поиск предмета в рюкзаке по названию\n");
     printf("[8] Записать состояние в дневник фермера\n");
-    printf("[9] Проверить рецепты крафта (вариант 6)\n");
+    printf("[9] Проверить рецепты крафта\n");
+    printf("[10] Отправиться в приключение (вариант 2: туман войны)\n");
     printf("Выберите пункт: ");
 }
 
@@ -771,7 +772,7 @@ int main(void)
 {
     setlocale(LC_CTYPE, "rus"); // чтобы буквы нормальные были 
     system("chcp 1251 > nul"); // чтобы буквы нормальные были 
-    printf(" Весёлый фермер: лабораторная №3 \n");
+    printf(" Весёлый фермер: лабораторная №4 \n");
     load_items_from_file();
     ask_farmer_name();
 
@@ -798,6 +799,7 @@ int main(void)
         case 7: find_item_by_name();   break;
         case 8: write_diary();         break;
         case 9: check_craft_recipes(); break;
+        case 10: adventure_mode();      break;
         default: printf("Нет такого пункта меню.\n"); break;
         }
     }
