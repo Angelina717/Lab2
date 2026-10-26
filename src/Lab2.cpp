@@ -648,7 +648,106 @@ static void print_map_with_fog(const Map* map, int hx, int hy)
     }
     printf("\n");
 }
+/* Попытка перемещения героя  */
+static int try_move(const Map* map, int* hx, int* hy, int dx, int dy)
+{
+    int nx = *hx + dx;
+    int ny = *hy + dy;
 
+    if (nx < 0 || nx >= map->w || ny < 0 || ny >= map->h) {
+        printf("Туда нельзя: край карты.\n");
+        return 0;
+    }
+
+    char c = map->cells[ny][nx];
+    if (c == CH_WALL) {
+        printf("Туда нельзя: стена.\n");
+        return 0;
+    }
+    if (c == CH_TREE) {
+        printf("Туда нельзя: дерево.\n");
+        return 0;
+    }
+    if (c == CH_ROCK) {
+        printf("Туда нельзя: камень.\n");
+        return 0;
+    }
+
+    *hx = nx;
+    *hy = ny;
+    return 1;
+}
+
+/* Основной цикл приключения  */
+void adventure_mode(void)
+{
+    Map map = { NULL, 0, 0 };
+
+    if (!generate_map(&map)) {
+        printf("Не удалось сгенерировать карту.\n");
+        return;
+    }
+
+    int hx = 0, hy = 0;
+    if (!find_hero_spawn(&map, &hx, &hy)) {
+        printf("На карте нет свободного места для героя. Освобождаем память.\n");
+        free_map(&map);
+        return;
+    }
+    place_stair_up(&map, hx, hy);
+
+    printf("\n=== Приключение началось! (Туман войны) ===\n");
+    printf("Карта %dx%d, радиус видимости %d.\n", map.w, map.h, FOG_RADIUS);
+    printf("Управление: W/A/S/D - ходьба, Q - домой (только на лестнице U).\n");
+    printf("Лестница U находится рядом с точкой старта.\n");
+
+    int running = 1;
+    while (running) {
+        print_map_with_fog(&map, hx, hy);
+        printf("Герой (%d,%d). Ваш ход: ", hx, hy);
+
+        char cmd[8];
+        if (fgets(cmd, sizeof(cmd), stdin) == NULL) {
+            clear_input();
+            continue;
+        }
+
+        size_t len = strlen(cmd);
+        while (len > 0 && (cmd[len - 1] == '\n' || cmd[len - 1] == '\r')) {
+            cmd[--len] = '\0';
+        }
+        if (len != 1) {
+            printf("Введите одну букву: W/A/S/D/Q.\n");
+            continue;
+        }
+
+        char c = cmd[0];
+        if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
+
+        switch (c) {
+        case 'W': try_move(&map, &hx, &hy, 0, -1); break;
+        case 'A': try_move(&map, &hx, &hy, -1, 0); break;
+        case 'S': try_move(&map, &hx, &hy, 0, +1); break;
+        case 'D': try_move(&map, &hx, &hy, +1, 0); break;
+        case 'Q':
+            if (map.cells[hy][hx] == CH_STAIR_UP) {
+                printf("Вы поднялись по лестнице и благополучно вернулись домой.\n");
+                running = 0;
+            }
+            else {
+                printf("Вы можете вернуться домой только стоя на лестнице вверх (U).\n");
+            }
+            break;
+        default:
+            printf("Неизвестная команда. Используйте W/A/S/D/Q.\n");
+            break;
+        }
+    }
+
+    /* ОБЯЗАТЕЛЬНО освобождаем память */
+    free_map(&map);
+    printf("Память карты освобождена. Возврат в меню.\n");
+}
 /*  Меню  */
 
 void print_menu(void)
