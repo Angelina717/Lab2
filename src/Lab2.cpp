@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
+#include <time.h>
 
 /* Константы */
 #define INVENTORY_SIZE   10
@@ -29,6 +30,22 @@
 #define INPUT_FILE   "input.txt"
 #define OUTPUT_FILE  "output.txt"
 #define DIARY_FILE   "diary.txt"
+
+/* Карта и приключение */
+#define MAP_MIN_SIZE       5
+#define MAP_MAX_SIZE       30
+#define OBSTACLE_PERCENT_MIN 15
+#define OBSTACLE_PERCENT_MAX 30
+#define FOG_RADIUS         4      /* радиус видимости вокруг героя */
+
+/* Символы карты */
+#define CH_WALL      '#'
+#define CH_FLOOR     '.'
+#define CH_TREE      'T'
+#define CH_ROCK      'R'
+#define CH_HERO      '@'
+#define CH_FOG       '?'
+#define CH_STAIR_UP  'U'  
 
 /*  Глобальные данные  */
 char item_names[MAX_ITEMS][MAX_NAME_LEN];
