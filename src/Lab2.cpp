@@ -482,6 +482,173 @@ void check_craft_recipes(void)
     fclose(fin);
     fclose(fout);
 }
+/* Карта */
+
+ /* Структура карты: хранит размеры и сам двумерный динамический массив */
+typedef struct {
+    char** cells;   /* cells[y][x] — символ клетки */
+    int    w;       /* ширина  (столбцы) */
+    int    h;       /* высота  (строки)  */
+} Map;
+
+/*  Выделение динамической карты  */
+static char** alloc_map(int h, int w)
+{
+    char** m = (char**)malloc((size_t)h * sizeof(char*));
+    if (m == NULL) {
+        printf("Ошибка выделения памяти под строки карты!\n");
+        return NULL;
+    }
+    for (int i = 0; i < h; i++) {
+        m[i] = (char*)malloc((size_t)w * sizeof(char));
+        if (m[i] == NULL) {
+            printf("Ошибка выделения памяти под строку %d!\n", i);
+            for (int j = 0; j < i; j++) free(m[j]);
+            free(m);
+            return NULL;
+        }
+    }
+    return m;
+}
+
+/* Освобождение карты (в обратном порядке!)  */
+static void free_map(Map* map)
+{
+    if (map == NULL || map->cells == NULL) return;
+    for (int i = 0; i < map->h; i++) {
+        free(map->cells[i]);
+    }
+    free(map->cells);
+    map->cells = NULL;
+    map->w = 0;
+    map->h = 0;
+}
+
+/*  Генерация карты с туманом войны  */
+static int generate_map(Map* map)
+{
+    int h = MAP_MIN_SIZE + rand() % (MAP_MAX_SIZE - MAP_MIN_SIZE + 1);
+    int w = MAP_MIN_SIZE + rand() % (MAP_MAX_SIZE - MAP_MIN_SIZE + 1);
+
+    char** cells = alloc_map(h, w);
+    if (cells == NULL) return 0;
+
+    map->cells = cells;
+    map->h = h;
+    map->w = w;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            if (y == 0 || y == h - 1 || x == 0 || x == w - 1)
+                cells[y][x] = CH_WALL;
+            else
+                cells[y][x] = CH_FLOOR;
+        }
+    }
+
+    int percent = OBSTACLE_PERCENT_MIN +
+        rand() % (OBSTACLE_PERCENT_MAX - OBSTACLE_PERCENT_MIN + 1);
+
+    for (int y = 1; y < h - 1; y++) {
+        for (int x = 1; x < w - 1; x++) {
+            if (rand() % 100 < percent) {
+                cells[y][x] = (rand() % 2 == 0) ? CH_TREE : CH_ROCK;
+            }
+        }
+    }
+    return 1;
+}
+
+/*  Поиск свободной клетки для героя  */
+static int find_hero_spawn(const Map* map, int* hx, int* hy)
+{
+    int total = 0;
+    for (int y = 1; y < map->h - 1; y++)
+        for (int x = 1; x < map->w - 1; x++)
+            if (map->cells[y][x] == CH_FLOOR) total++;
+
+    if (total == 0) return 0;
+
+    int pick = rand() % total;
+    for (int y = 1; y < map->h - 1; y++) {
+        for (int x = 1; x < map->w - 1; x++) {
+            if (map->cells[y][x] == CH_FLOOR) {
+                if (pick == 0) { *hx = x; *hy = y; return 1; }
+                pick--;
+            }
+        }
+    }
+    return 0;
+}
+
+/*  Размещение лестницы U рядом с героем  */
+static void place_stair_up(Map* map, int hx, int hy)
+{
+    /* Проверяем соседние 8 клеток */
+    int dx[] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+    int dy[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+
+    int valid_cells[8][2];
+    int count = 0;
+
+    for (int i = 0; i < 8; i++) {
+        int nx = hx + dx[i];
+        int ny = hy + dy[i];
+        if (nx > 0 && nx < map->w - 1 && ny > 0 && ny < map->h - 1) {
+            if (map->cells[ny][nx] == CH_FLOOR) {
+                valid_cells[count][0] = nx;
+                valid_cells[count][1] = ny;
+                count++;
+            }
+        }
+    }
+
+    if (count > 0) {
+        int pick = rand() % count;
+        map->cells[valid_cells[pick][1]][valid_cells[pick][0]] = CH_STAIR_UP;
+    }
+    else {
+        /* Если вокруг всё занято (редкость), ищем любую свободную клетку */
+        for (int y = 1; y < map->h - 1; y++) {
+            for (int x = 1; x < map->w - 1; x++) {
+                if (map->cells[y][x] == CH_FLOOR) {
+                    map->cells[y][x] = CH_STAIR_UP;
+                    return;
+                }
+            }
+        }
+    }
+}
+
+/*  В пределах ли видимости (туман) */
+static int is_visible(int hx, int hy, int x, int y)
+{
+    int dx = x - hx;
+    int dy = y - hy;
+    return (dx * dx + dy * dy) <= (FOG_RADIUS * FOG_RADIUS);
+}
+
+/* Отрисовка карты с учётом тумана  */
+static void print_map_with_fog(const Map* map, int hx, int hy)
+{
+    printf("\n");
+    for (int y = 0; y < map->h; y++) {
+        for (int x = 0; x < map->w; x++) {
+            if (x == hx && y == hy) {
+                putchar(CH_HERO);
+            }
+            else if (is_visible(hx, hy, x, y)) {
+                putchar(map->cells[y][x]);
+            }
+            else {
+                putchar(CH_FOG);
+            }
+        }
+        putchar('\n');
+    }
+    printf("\n");
+}
+
 /*  Меню  */
 
 void print_menu(void)
