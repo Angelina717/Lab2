@@ -45,7 +45,8 @@
 #define CH_ROCK      'R'
 #define CH_HERO      '@'
 #define CH_FOG       '?'
-#define CH_STAIR_UP  'U'  
+#define CH_STAIR_UP  'U' 
+#define CH_STAIR_DOWN 'D'
 
 /*  Глобальные данные  */
 char item_names[MAX_ITEMS][MAX_NAME_LEN];
@@ -482,7 +483,7 @@ void check_craft_recipes(void)
     fclose(fin);
     fclose(fout);
 }
-/* Карта */
+/* Карта  */
 
  /* Структура карты: хранит размеры и сам двумерный динамический массив */
 typedef struct {
@@ -491,7 +492,7 @@ typedef struct {
     int    h;       /* высота  (строки)  */
 } Map;
 
-/*  Выделение динамической карты  */
+/* Выделение динамической карты  */
 static char** alloc_map(int h, int w)
 {
     char** m = (char**)malloc((size_t)h * sizeof(char*));
@@ -511,7 +512,7 @@ static char** alloc_map(int h, int w)
     return m;
 }
 
-/* Освобождение карты (в обратном порядке!)  */
+/*  Освобождение карты (в обратном порядке!)*/
 static void free_map(Map* map)
 {
     if (map == NULL || map->cells == NULL) return;
@@ -524,7 +525,7 @@ static void free_map(Map* map)
     map->h = 0;
 }
 
-/*  Генерация карты с туманом войны  */
+/*  Генерация карты  */
 static int generate_map(Map* map)
 {
     int h = MAP_MIN_SIZE + rand() % (MAP_MAX_SIZE - MAP_MIN_SIZE + 1);
@@ -581,13 +582,11 @@ static int find_hero_spawn(const Map* map, int* hx, int* hy)
     return 0;
 }
 
-/*  Размещение лестницы U рядом с героем  */
+/*  Размещение лестницы U рядом с героем */
 static void place_stair_up(Map* map, int hx, int hy)
 {
-    /* Проверяем соседние 8 клеток */
     int dx[] = { 0, 1, 1, 1, 0, -1, -1, -1 };
     int dy[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-
     int valid_cells[8][2];
     int count = 0;
 
@@ -608,13 +607,38 @@ static void place_stair_up(Map* map, int hx, int hy)
         map->cells[valid_cells[pick][1]][valid_cells[pick][0]] = CH_STAIR_UP;
     }
     else {
-        /* Если вокруг всё занято (редкость), ищем любую свободную клетку */
         for (int y = 1; y < map->h - 1; y++) {
             for (int x = 1; x < map->w - 1; x++) {
                 if (map->cells[y][x] == CH_FLOOR) {
                     map->cells[y][x] = CH_STAIR_UP;
                     return;
                 }
+            }
+        }
+    }
+}
+
+/*  Размещение лестницы D (вниз) в случайном месте  */
+static void place_stair_down(Map* map, int hx, int hy)
+{
+    int total = 0;
+    for (int y = 1; y < map->h - 1; y++) {
+        for (int x = 1; x < map->w - 1; x++) {
+            /* Ищем пол, но не там, где стоит герой (чтобы D не появилась под ним) */
+            if (map->cells[y][x] == CH_FLOOR && !(x == hx && y == hy)) total++;
+        }
+    }
+    if (total == 0) return;
+
+    int pick = rand() % total;
+    for (int y = 1; y < map->h - 1; y++) {
+        for (int x = 1; x < map->w - 1; x++) {
+            if (map->cells[y][x] == CH_FLOOR && !(x == hx && y == hy)) {
+                if (pick == 0) {
+                    map->cells[y][x] = CH_STAIR_DOWN;
+                    return;
+                }
+                pick--;
             }
         }
     }
@@ -628,8 +652,8 @@ static int is_visible(int hx, int hy, int x, int y)
     return (dx * dx + dy * dy) <= (FOG_RADIUS * FOG_RADIUS);
 }
 
-/* Отрисовка карты с учётом тумана  */
-static void print_map_with_fog(const Map* map, int hx, int hy)
+/*  Отрисовка карты (с туманом или без) */
+static void print_map_with_fog(const Map* map, int hx, int hy, int use_fog)
 {
     printf("\n");
     for (int y = 0; y < map->h; y++) {
@@ -637,7 +661,8 @@ static void print_map_with_fog(const Map* map, int hx, int hy)
             if (x == hx && y == hy) {
                 putchar(CH_HERO);
             }
-            else if (is_visible(hx, hy, x, y)) {
+            /* Если туман отключен (!use_fog) ИЛИ клетка в радиусе видимости */
+            else if (!use_fog || is_visible(hx, hy, x, y)) {
                 putchar(map->cells[y][x]);
             }
             else {
@@ -648,7 +673,8 @@ static void print_map_with_fog(const Map* map, int hx, int hy)
     }
     printf("\n");
 }
-/* Попытка перемещения героя  */
+
+/*  Попытка перемещения героя  */
 static int try_move(const Map* map, int* hx, int* hy, int dx, int dy)
 {
     int nx = *hx + dx;
@@ -660,29 +686,22 @@ static int try_move(const Map* map, int* hx, int* hy, int dx, int dy)
     }
 
     char c = map->cells[ny][nx];
-    if (c == CH_WALL) {
-        printf("Туда нельзя: стена.\n");
-        return 0;
-    }
-    if (c == CH_TREE) {
-        printf("Туда нельзя: дерево.\n");
-        return 0;
-    }
-    if (c == CH_ROCK) {
-        printf("Туда нельзя: камень.\n");
-        return 0;
-    }
+    if (c == CH_WALL) { printf("Туда нельзя: стена.\n"); return 0; }
+    if (c == CH_TREE) { printf("Туда нельзя: дерево.\n"); return 0; }
+    if (c == CH_ROCK) { printf("Туда нельзя: камень.\n"); return 0; }
 
     *hx = nx;
     *hy = ny;
     return 1;
 }
 
-/* Основной цикл приключения  */
+/*  Основной цикл приключения  */
 void adventure_mode(void)
 {
     Map map = { NULL, 0, 0 };
+    int current_floor = 1; /* Счетчик этажей */
 
+    /* Генерация первого этажа */
     if (!generate_map(&map)) {
         printf("Не удалось сгенерировать карту.\n");
         return;
@@ -690,21 +709,26 @@ void adventure_mode(void)
 
     int hx = 0, hy = 0;
     if (!find_hero_spawn(&map, &hx, &hy)) {
-        printf("На карте нет свободного места для героя. Освобождаем память.\n");
+        printf("На карте нет свободного места для героя.\n");
         free_map(&map);
         return;
     }
-    place_stair_up(&map, hx, hy);
 
-    printf("\n=== Приключение началось! (Туман войны) ===\n");
-    printf("Карта %dx%d, радиус видимости %d.\n", map.w, map.h, FOG_RADIUS);
-    printf("Управление: W/A/S/D - ходьба, Q - домой (только на лестнице U).\n");
-    printf("Лестница U находится рядом с точкой старта.\n");
+    /* На первом этаже ставим и лестницу наверх (выход), и лестницу вниз */
+    place_stair_up(&map, hx, hy);
+    place_stair_down(&map, hx, hy);
+
+    printf("\n=== Приключение началось! (Этаж 1 - Без тумана) ===\n");
+    printf("Карта %dx%d.\n", map.w, map.h);
+    printf("Найдите лестницу вниз (D), чтобы спуститься. Выход (Q) - на лестнице (U).\n");
 
     int running = 1;
     while (running) {
-        print_map_with_fog(&map, hx, hy);
-        printf("Герой (%d,%d). Ваш ход: ", hx, hy);
+        /* Туман войны включается только со 2-го этажа */
+        int use_fog = (current_floor > 1);
+
+        print_map_with_fog(&map, hx, hy, use_fog);
+        printf("Этаж %d. Герой (%d,%d). Ваш ход: ", current_floor, hx, hy);
 
         char cmd[8];
         if (fgets(cmd, sizeof(cmd), stdin) == NULL) {
@@ -731,21 +755,59 @@ void adventure_mode(void)
         case 'D': try_move(&map, &hx, &hy, +1, 0); break;
         case 'Q':
             if (map.cells[hy][hx] == CH_STAIR_UP) {
-                printf("Вы поднялись по лестнице и благополучно вернулись домой.\n");
+                printf("Вы поднялись по лестнице и вернулись домой.\n");
                 running = 0;
             }
             else {
-                printf("Вы можете вернуться домой только стоя на лестнице вверх (U).\n");
+                printf("Выход домой доступен только на лестнице вверх (U).\n");
             }
             break;
         default:
             printf("Неизвестная команда. Используйте W/A/S/D/Q.\n");
             break;
         }
+
+        /* ПРОВЕРКА: если герой встал на лестницу вниз (D) */
+        if (running && map.cells[hy][hx] == CH_STAIR_DOWN) {
+            printf("\n>>> Вы спускаетесь на этаж ниже... <<<\n");
+
+            /* 1. Очищаем старую карту */
+            free_map(&map);
+
+            /* 2. Увеличиваем счетчик этажей */
+            current_floor++;
+
+            /* 3. Генерируем новую карту */
+            if (!generate_map(&map)) {
+                printf("Ошибка при генерации нового этажа.\n");
+                running = 0;
+                break;
+            }
+
+            /* 4. Ищем место для спавна героя */
+            if (!find_hero_spawn(&map, &hx, &hy)) {
+                printf("Ошибка спавна героя на новом этаже.\n");
+                free_map(&map);
+                running = 0;
+                break;
+            }
+
+            /* 5. Ставим выход (U) рядом с героем и новую лестницу вниз (D) */
+            place_stair_up(&map, hx, hy);
+            place_stair_down(&map, hx, hy);
+
+            /* Информируем игрока о включении тумана */
+            if (current_floor == 2) {
+                printf("\n=== ВНИМАНИЕ: на этом этаже темно (Включен туман войны) ===\n");
+                printf("Вы видите только то, что в радиусе %d клеток.\n", FOG_RADIUS);
+            }
+        }
     }
 
     /* ОБЯЗАТЕЛЬНО освобождаем память */
-    free_map(&map);
+    if (map.cells != NULL) {
+        free_map(&map);
+    }
     printf("Память карты освобождена. Возврат в меню.\n");
 }
 /*  Меню  */
