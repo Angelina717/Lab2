@@ -5,7 +5,7 @@
 #include <locale.h>
 #include <time.h>
 
-/* Константы */
+/*  Константы */
 #define INVENTORY_SIZE   10
 #define MAX_ITEMS        10
 #define MAX_NAME_LEN     32
@@ -45,7 +45,7 @@
 #define CH_ROCK      'R'
 #define CH_HERO      '@'
 #define CH_FOG       '?'
-#define CH_STAIR_UP  'U' 
+#define CH_STAIR_UP  'U'  /* Лестница вверх (выход домой) */
 #define CH_STAIR_DOWN 'D'
 
 /*  Глобальные данные  */
@@ -53,14 +53,14 @@ char item_names[MAX_ITEMS][MAX_NAME_LEN];
 char farmer_name[MAX_FARMER_NAME] = "Фермер";
 int  current_day = 1;
 int  current_hour = 8;
+
 int inventory[INVENTORY_SIZE] = {
     ITEM_EMPTY, ITEM_WOOD, ITEM_STONE, ITEM_SEEDS,
     ITEM_IRON,  ITEM_GOLD, ITEM_APPLE, ITEM_POTION,
     ITEM_ROPE,  ITEM_TORCH
 };
 
-/*  защита от «дурака»  */
-
+/*  Защита от «дурака»  */
 static void clear_input(void)
 {
     int c;
@@ -93,7 +93,6 @@ static void read_line(const char* prompt, char* buf, size_t size)
 }
 
 /*  Имя фермера  */
-
 void ask_farmer_name(void)
 {
     char buf[MAX_FARMER_NAME];
@@ -107,8 +106,7 @@ void ask_farmer_name(void)
     printf("Привет, %s!\n", farmer_name);
 }
 
-/*  Каталог предметов из items.txt  */
-
+/* Каталог предметов  */
 void load_default_items(void)
 {
     const char* defs[MAX_ITEMS] = {
@@ -123,7 +121,7 @@ void load_default_items(void)
 
 void load_items_from_file(void)
 {
-    load_default_items();  /* сразу заполняем значениями по умолчанию */
+    load_default_items();
     return;
     FILE* f = fopen(ITEMS_FILE, "r");
     if (f == NULL) {
@@ -131,23 +129,19 @@ void load_items_from_file(void)
             ITEMS_FILE);
         return;
     }
-
     char line[MAX_LINE_LEN];
     int  idx = 0;
-
     while (idx < MAX_ITEMS && fgets(line, sizeof(line), f) != NULL) {
         size_t len = strlen(line);
         while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
             line[--len] = '\0';
         }
         if (len == 0) continue;
-
         strncpy(item_names[idx], line, MAX_NAME_LEN - 1);
         item_names[idx][MAX_NAME_LEN - 1] = '\0';
         idx++;
     }
     fclose(f);
-
     printf("Загружено названий из %s: %d.\n", ITEMS_FILE, idx);
     if (idx < MAX_ITEMS) {
         printf("[!] Строк меньше %d — остальные взяты по умолчанию.\n",
@@ -161,8 +155,7 @@ const char* get_item_name(int id)
     return item_names[id];
 }
 
-/*  Вывод инвентаря с названиями */
-
+/*  Инвентарь  */
 void print_inventory(void)
 {
     printf("\n--- Инвентарь ---\n");
@@ -171,8 +164,6 @@ void print_inventory(void)
             i, inventory[i], get_item_name(inventory[i]));
     }
 }
-
-/*  Часы  */
 
 void show_clock(void)
 {
@@ -196,8 +187,6 @@ void pass_time(void)
         hours, current_day, current_hour);
 }
 
-/* Работа с инвентарём */
-/* Положить предмет в слот*/
 void put_item(void)
 {
     int slot, id;
@@ -214,7 +203,7 @@ void put_item(void)
     inventory[slot] = id;
     printf("Предмет \"%s\" помещён в слот %d.\n", get_item_name(id), slot);
 }
-/* Выбросить предмет*/
+
 void drop_item(void)
 {
     int slot;
@@ -227,16 +216,12 @@ void drop_item(void)
     printf("Слот %d очищен.\n", slot);
 }
 
-}
-/* Очистка мусора */
 void clear_trash(void)
 {
     int id;
     if (!read_int("Введите ID предмета для удаления: ", &id)) return;
-
     printf("\nИнвентарь до очистки:\n");
     print_inventory();
-
     int cleared = 0;
     for (int i = 0; i < INVENTORY_SIZE; i++) {
         if (inventory[i] == id && id != ITEM_EMPTY) {
@@ -244,24 +229,19 @@ void clear_trash(void)
             cleared++;
         }
     }
-
     printf("\nИнвентарь после очистки:\n");
     print_inventory();
     printf("Очищено слотов: %d\n", cleared);
 }
 
-/*  Поиск предмета по названию */
-
 void find_item_by_name(void)
 {
     char query[MAX_NAME_LEN];
     read_line("Введите название предмета: ", query, sizeof(query));
-
     if (strlen(query) == 0) {
         printf("Пустой запрос.\n");
         return;
     }
-
     int found_id = -1;
     for (int i = 0; i < MAX_ITEMS; i++) {
         if (strcmp(item_names[i], query) == 0) {
@@ -269,14 +249,11 @@ void find_item_by_name(void)
             break;
         }
     }
-
     if (found_id == -1) {
         printf("Предмет \"%s\" не найден в каталоге.\n", query);
         return;
     }
-
     printf("ID предмета \"%s\" = %d. Ищем в рюкзаке...\n", query, found_id);
-
     int found_any = 0;
     for (int i = 0; i < INVENTORY_SIZE; i++) {
         if (inventory[i] == found_id) {
@@ -284,14 +261,12 @@ void find_item_by_name(void)
             found_any = 1;
         }
     }
-
     if (!found_any) {
         printf("В рюкзаке такого предмета нет.\n");
     }
 }
 
-/*  Дневник фермера  */
-
+/*  Дневник  */
 void write_diary(void)
 {
     FILE* f = fopen(DIARY_FILE, "a");
@@ -299,17 +274,16 @@ void write_diary(void)
         printf("Не удалось открыть %s для записи!\n", DIARY_FILE);
         return;
     }
-     /* вывод на экран*/
-     printf("\n=== Запись дневника ===\n");
-     printf("Фермер: %s\n", farmer_name);
-     printf("День %d, %02d:00\n", current_day, current_hour);
-     printf("Инвентарь:\n");
-     for (int i = 0; i < INVENTORY_SIZE; i++) {
-         printf("  Слот %d: [%d] - %s\n",
-             i, inventory[i], get_item_name(inventory[i]));
-     }
-     printf("\n");
-     /* запись в файл */
+    printf("\n=== Запись дневника ===\n");
+    printf("Фермер: %s\n", farmer_name);
+    printf("День %d, %02d:00\n", current_day, current_hour);
+    printf("Инвентарь:\n");
+    for (int i = 0; i < INVENTORY_SIZE; i++) {
+        printf("  Слот %d: [%d] - %s\n",
+            i, inventory[i], get_item_name(inventory[i]));
+    }
+    printf("\n");
+
     fprintf(f, "=== Запись дневника ===\n");
     fprintf(f, "Фермер: %s\n", farmer_name);
     fprintf(f, "День %d, %02d:00\n", current_day, current_hour);
@@ -319,20 +293,17 @@ void write_diary(void)
             i, inventory[i], get_item_name(inventory[i]));
     }
     fprintf(f, "\n");
-
     fclose(f);
     printf("Состояние записано в %s.\n", DIARY_FILE);
 }
 
-/* Проверка рецептов крафта  */
-
+/*  Крафт  */
 typedef struct {
     char name[MAX_NAME_LEN];
     int  ingredients[MAX_INGREDIENTS];
     int  ing_count;
 } Recipe;
 
-/* Сколько раз предмет с данным ID лежит в инвентаре */
 static int count_in_inventory(int id)
 {
     int cnt = 0;
@@ -342,45 +313,32 @@ static int count_in_inventory(int id)
     return cnt;
 }
 
-/*  строки вида "Название: ID1 ID2 ID3".
-   Возвращает 1 при успехе, 0 при ошибке формата. */
 static int parse_recipe_line(const char* line, Recipe* r)
 {
     r->ing_count = 0;
     r->name[0] = '\0';
-
     const char* colon = strchr(line, ':');
     if (colon == NULL) return 0;
-
     size_t name_len = (size_t)(colon - line);
     if (name_len == 0 || name_len >= MAX_NAME_LEN) return 0;
-
     strncpy(r->name, line, name_len);
     r->name[name_len] = '\0';
-
-    /* Обрезаем пробелы справа в имени */
     while (name_len > 0 && r->name[name_len - 1] == ' ') {
         r->name[--name_len] = '\0';
     }
-
-    /* Разбор компонентов */
     const char* p = colon + 1;
     while (*p != '\0') {
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0') break;
-
         if (*p < '0' || *p > '9') return 0;
-
         int val = 0;
         while (*p >= '0' && *p <= '9') {
             val = val * 10 + (*p - '0');
             p++;
         }
-
         if (r->ing_count >= MAX_INGREDIENTS) return 0;
         r->ingredients[r->ing_count++] = val;
     }
-
     if (r->ing_count == 0) return 0;
     return 1;
 }
@@ -393,14 +351,12 @@ void check_craft_recipes(void)
             INPUT_FILE);
         return;
     }
-
     FILE* fout = fopen(OUTPUT_FILE, "w");
     if (fout == NULL) {
         printf("[!] Не удалось открыть %s для записи.\n", OUTPUT_FILE);
         fclose(fin);
         return;
     }
-
     printf("\n Проверка рецептов крафта \n");
     fprintf(fout, " Проверка рецептов крафта \n");
     fprintf(fout, "Фермер: %s | День %d, %02d:00\n\n",
@@ -412,13 +368,12 @@ void check_craft_recipes(void)
 
     while (fgets(line, sizeof(line), fin) != NULL) {
         line_no++;
-
         size_t len = strlen(line);
         while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
             line[--len] = '\0';
         }
-        if (len == 0) continue;         /* пустые строки пропускаем */
-        if (line[0] == '#') continue;   /* комментарии пропускаем */
+        if (len == 0) continue;
+        if (line[0] == '#') continue;
 
         Recipe r;
         if (!parse_recipe_line(line, &r)) {
@@ -426,10 +381,8 @@ void check_craft_recipes(void)
             fprintf(fout, "Строка %d: [ОШИБКА ФОРМАТА] %s\n", line_no, line);
             continue;
         }
-
         total++;
 
-        /* Сколько каждого ID требуется */
         int need[MAX_ITEMS] = { 0 };
         for (int i = 0; i < r.ing_count; i++) {
             int id = r.ingredients[i];
@@ -437,7 +390,6 @@ void check_craft_recipes(void)
             need[id]++;
         }
 
-        /* Что и в каком количестве не хватает */
         int missing_ids[MAX_ITEMS];
         int missing_cnt[MAX_ITEMS];
         int missing_total = 0;
@@ -452,7 +404,6 @@ void check_craft_recipes(void)
             }
         }
 
-        /* Формируем вердикт */
         char verdict[MAX_LINE_LEN];
         if (missing_total == 0) {
             available++;
@@ -464,36 +415,32 @@ void check_craft_recipes(void)
                 "[НЕ ХВАТАЕТ РЕСУРСОВ]");
             for (int i = 0; i < missing_total && pos < (int)sizeof(verdict); i++) {
                 pos += snprintf(verdict + pos, sizeof(verdict) - pos,
-                    " %s x%d",
-                    get_item_name(missing_ids[i]),
-                    missing_cnt[i]);
+                    " %s x%d", get_item_name(missing_ids[i]), missing_cnt[i]);
             }
         }
-
         printf("%s: %s\n", r.name, verdict);
         fprintf(fout, "%s: %s\n", r.name, verdict);
     }
-
     fprintf(fout, "\nИтого рецептов: %d | Доступно: %d | Не хватает: %d\n",
         total, available, not_enough);
     printf("\nИтого рецептов: %d | Доступно: %d | Не хватает: %d\n",
         total, available, not_enough);
     printf("Результат сохранён в %s.\n", OUTPUT_FILE);
-
     fclose(fin);
     fclose(fout);
 }
+
 /* Карта  */
 
  /* Структура карты: хранит размеры и сам двумерный динамический массив */
 typedef struct {
     char** cells;   /* cells[y][x] — символ клетки */
-    int    w;       /* ширина  (столбцы) */
-    int    h;       /* высота  (строки)  */
+    int    w;       /* ширина  (столбцы,x) */
+    int    h;       /* высота  (строки,y)  */
 } Map;
 
 /* Выделение динамической карты  */
-static char** alloc_map(int h, int w)
+static char** alloc_map(int h, int w) // h-высота, w-ширина
 {
     char** m = (char**)malloc((size_t)h * sizeof(char*));
     if (m == NULL) {
@@ -546,7 +493,7 @@ static int generate_map(Map* map)
                 cells[y][x] = CH_FLOOR;
         }
     }
-
+    /*  случайно выбираем плотность препятствий */
     int percent = OBSTACLE_PERCENT_MIN +
         rand() % (OBSTACLE_PERCENT_MAX - OBSTACLE_PERCENT_MIN + 1);
 
@@ -587,9 +534,9 @@ static void place_stair_up(Map* map, int hx, int hy)
 {
     int dx[] = { 0, 1, 1, 1, 0, -1, -1, -1 };
     int dy[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-    int valid_cells[8][2];
+    int valid_cells[8][2];// хранение координат подходящих соседних клеток
     int count = 0;
-
+    /* вычисляем координаты соседней клетки */
     for (int i = 0; i < 8; i++) {
         int nx = hx + dx[i];
         int ny = hy + dy[i];
@@ -644,8 +591,8 @@ static void place_stair_down(Map* map, int hx, int hy)
     }
 }
 
-/*  В пределах ли видимости (туман) */
-static int is_visible(int hx, int hy, int x, int y)
+/*  В пределах ли видимости (туман), теорема Пифагора*/
+int is_visible(int hx, int hy, int x, int y)
 {
     int dx = x - hx;
     int dy = y - hy;
@@ -804,14 +751,14 @@ void adventure_mode(void)
         }
     }
 
-    /* ОБЯЗАТЕЛЬНО освобождаем память */
+    /* обязательно освобождаем память */
     if (map.cells != NULL) {
         free_map(&map);
     }
     printf("Память карты освобождена. Возврат в меню.\n");
 }
-/*  Меню  */
 
+/*  Меню  */
 void print_menu(void)
 {
     printf("\n Меню (Фермер: %s | День %d, %02d:00) \n",
@@ -826,15 +773,18 @@ void print_menu(void)
     printf("[7] Поиск предмета в рюкзаке по названию\n");
     printf("[8] Записать состояние в дневник фермера\n");
     printf("[9] Проверить рецепты крафта\n");
-    printf("[10] Отправиться в приключение (вариант 2: туман войны)\n");
+    printf("[10] Отправиться в приключение (вариант 2)\n");
     printf("Выберите пункт: ");
 }
 
 int main(void)
 {
-    setlocale(LC_CTYPE, "rus"); // чтобы буквы нормальные были 
-    system("chcp 1251 > nul"); // чтобы буквы нормальные были 
-    printf(" Весёлый фермер: лабораторная №4 \n");
+    setlocale(LC_CTYPE, "rus");
+    system("chcp 1251 > nul");
+
+    srand((unsigned)time(NULL));
+
+    printf(" Весёлый фермер: лабораторная №4 (вариант 2 — Туман войны) \n");
     load_items_from_file();
     ask_farmer_name();
 
@@ -851,20 +801,19 @@ int main(void)
         clear_input();
 
         switch (choice) {
-        case 0: printf("Выход из игры. Пока, %s!\n", farmer_name); break;
-        case 1: show_clock();          break;
-        case 2: pass_time();           break;
-        case 3: print_inventory();     break;
-        case 4: put_item();            break;
-        case 5: drop_item();           break;
-        case 6: clear_trash();         break;
-        case 7: find_item_by_name();   break;
-        case 8: write_diary();         break;
-        case 9: check_craft_recipes(); break;
+        case 0:  printf("Выход из игры. Пока, %s!\n", farmer_name); break;
+        case 1:  show_clock();          break;
+        case 2:  pass_time();           break;
+        case 3:  print_inventory();     break;
+        case 4:  put_item();            break;
+        case 5:  drop_item();           break;
+        case 6:  clear_trash();         break;
+        case 7:  find_item_by_name();   break;
+        case 8:  write_diary();         break;
+        case 9:  check_craft_recipes(); break;
         case 10: adventure_mode();      break;
         default: printf("Нет такого пункта меню.\n"); break;
         }
     }
-
     return 0;
 }
