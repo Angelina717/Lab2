@@ -274,20 +274,16 @@ void adventure_mode(Player* p, int* day, int* hour)
         while (len > 0 && (cmd[len - 1] == '\n' || cmd[len - 1] == '\r'))
             cmd[--len] = '\0';
         if (len != 1) { printf("Введите одну букву: W/A/S/D/Q.\n"); continue; }
-
+        
         char c = cmd[0];
         if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
 
         if (c == 'Q') {
-            if (m->cells[hy][hx] == CH_STAIR_UP) {
-                printf("Вы поднялись по лестнице и вернулись домой.\n");
-                running = 0;
-            }
-            else {
-                printf("Выход домой доступен только на лестнице вверх (U).\n");
-            }
+            /* Возврат домой доступен в любой момент */
+            printf("Вы покинули подземелье и вернулись домой.\n");
+            running = 0;
             continue;
-        }
+        }        
 
         int moved = 0;
         switch (c) {
