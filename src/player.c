@@ -79,7 +79,6 @@ void player_print_buff(const Player* p)
 void player_try_inflict_status(Player* p)
 {
     if (!p) return;
-    if (p->buff.type != STATUS_NONE) return;
     if (rand() % 100 >= STATUS_INFLICT_CHANCE) return;
 
     int r = rand() % 3;
@@ -89,7 +88,7 @@ void player_try_inflict_status(Player* p)
     default:p->buff.type = STATUS_ENERGIZED; break;
     }
     p->buff.turns = STATUS_MAX_DURATION;
-    printf(">>> Вы наступили на колючку! Получен статус: %s на %d шагов.\n",
+    printf(">>> Вы наступили на колючку/съели странную ягоду! Получен статус: %s на %d шагов.\n",
         status_name(p->buff.type), p->buff.turns);
 }
 
