@@ -43,6 +43,8 @@
 #define CH_FOG        '?'
 #define CH_STAIR_UP   'U'
 #define CH_STAIR_DOWN 'D'
+#define CH_HEAL       '+'
+#define CH_MONSTER    'M'
 
 /*  стартовые характеристики, экономика, статусы*/
 #define PLAYER_START_HP        100
@@ -59,8 +61,30 @@
 #define STATUS_SPRAIN_MULT       2    /* Растяжение: x2 расход выносливости */
 #define STATUS_BUFF_FREE_COST    0    /* Бодрость: шаг бесплатный */
 
-/*  Перечисления  */
+/*  НОВОЕ (ЛР6)  */
+#define PLAYER_START_ATTACK    5
+#define PLAYER_START_DEFENSE   2
 
+#define INTERACT_STAMINA_COST  2    /* активное действие на клетку с сущностью */
+#define ENTITY_LEVEL_MULT      1.25 /* множитель роста характеристик с этажом */
+#define ENTITY_DENSITY_PERCENT 12   /* % от площади карты под сущности */
+#define HEAL_HP_RESTORE        25
+#define HEAL_STAMINA_RESTORE   10
+#define MONSTER_GOLD_BASE      8
+#define MONSTER_DROP_CHANCE    40   /* % шанс выпадения трофея */
+#define MIN_DAMAGE             1
+
+/* Вариант 7: Кровопускание и Оглушение */
+#define STATUS_BLEED       5    /* новый тип статуса */
+#define STATUS_STUN        6
+#define BLEED_DURATION     3    /* 3 шага по карте */
+#define BLEED_PERCENT      20   /* 20% от базового урона атакующего за шаг */
+#define STUN_CHANCE        20   /* % шанс оглушить цель */
+#define BLEED_CHANCE       25   /* % шанс наложить кровотечение */
+#define MONSTER_BASE_STUN  15
+#define MONSTER_BASE_BLEED 20
+
+/*  Перечисления  */
 typedef enum MenuAction {
     MENU_EXIT = 0,
     MENU_CREATE_PLAYER,
@@ -93,18 +117,20 @@ typedef enum StatusEffect {
     STATUS_HEALTHY,
     STATUS_SPRAIN,
     STATUS_POISON,
-    STATUS_ENERGIZED
+    STATUS_ENERGIZED,
+    STATUS_BLEEDING,   /* вариант 7 */
+    STATUS_STUNNED     /* вариант 7 */
 } StatusEffect;
 
 /*  Структуры  */
-
 /* Активный эффект (вариант 3) */
 typedef struct Buff {
     StatusEffect type;   /* тип эффекта */
     int          turns;  /* оставшееся число ходов */
+    int          power;  /* для кровотечения — сколько HP снимать за шаг */
 } Buff;
 
-/* Структура игрока */
+/* Структура игрока. Добавлены боевые параметры */
 typedef struct Player {
     char name[MAX_FARMER_NAME];
     int  hp;
@@ -112,6 +138,8 @@ typedef struct Player {
     int  stamina;
     int  max_stamina;
     int  gold;
+    int  attack;        /* NEW */
+    int  defense;       /* NEW */
     int  x, y;                       /* координаты на карте */
     int  inventory[INVENTORY_SIZE];  /* ID предметов */
     Buff buff;                       /* активный статус */
