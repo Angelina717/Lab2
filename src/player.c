@@ -30,6 +30,10 @@ Player* player_create(void)
     p->stamina = PLAYER_START_STAMINA;
     p->gold = PLAYER_START_GOLD;
     p->x = p->y = 0;
+    p->attack = PLAYER_START_ATTACK;
+    p->defense = PLAYER_START_DEFENSE;
+    p->buff.power = 0;
+    p->stunned = 0;
 
     int start_items[INVENTORY_SIZE] = {
         ITEM_EMPTY, ITEM_WOOD, ITEM_STONE, ITEM_SEEDS,
@@ -61,6 +65,8 @@ const char* status_name(StatusEffect s)
     case STATUS_SPRAIN:    return "Растяжение";
     case STATUS_POISON:    return "Отравление";
     case STATUS_ENERGIZED: return "Бодрость";
+    case STATUS_BLEEDING:  return "Кровотечение";
+    case STATUS_STUNNED:   return "Оглушение";
     case STATUS_NONE:
     default:               return "Нет";
     }
@@ -98,14 +104,19 @@ void player_apply_status_step(Player* p, int* used_stamina_out)
     if (!p || !used_stamina_out) return;
 
     int cost = 1;
-
     if (p->buff.type == STATUS_SPRAIN)    cost *= STATUS_SPRAIN_MULT;
     if (p->buff.type == STATUS_ENERGIZED) cost = STATUS_BUFF_FREE_COST;
 
     if (p->buff.type == STATUS_POISON) {
         p->hp -= STATUS_POISON_HP_DMG;
-        if (p->hp < 0) p->hp = 0;
+        if (p->hp < 0) p->hp = 0; /* <--- ЗАЩИТА ОТ МИНУСА */
         printf("Яд отнимает %d HP (осталось %d).\n", STATUS_POISON_HP_DMG, p->hp);
+    }
+    if (p->buff.type == STATUS_BLEEDING) {
+        int dmg = p->buff.power > 0 ? p->buff.power : 1;
+        p->hp -= dmg;
+        if (p->hp < 0) p->hp = 0; /* <--- ЗАЩИТА ОТ МИНУСА */
+        printf("Кровотечение отнимает %d HP (осталось %d).\n", dmg, p->hp);
     }
 
     if (p->buff.type != STATUS_NONE && p->buff.turns > 0) {
@@ -113,6 +124,7 @@ void player_apply_status_step(Player* p, int* used_stamina_out)
         if (p->buff.turns == 0) {
             printf("Статус %s закончился.\n", status_name(p->buff.type));
             p->buff.type = STATUS_NONE;
+            p->buff.power = 0;
         }
     }
 
@@ -128,6 +140,8 @@ void player_print_card(const Player* p, int day, int hour)
     printf("HP:            %d/%d\n", p->hp, p->max_hp);
     printf("Выносливость:  %d/%d\n", p->stamina, p->max_stamina);
     printf("Золото:        %d\n", p->gold);
+    printf("Атака:         %d\n", p->attack);
+    printf("Защита:        %d\n", p->defense);
     printf("Позиция:       (%d, %d)\n", p->x, p->y);
     printf("Время:         День %d, %02d:00\n", day, hour);
     player_print_buff(p);
@@ -237,6 +251,17 @@ void player_write_diary(const Player* p, int day, int hour)
     printf("Фермер: %s\n", p->name);
     printf("День %d, %02d:00\n", day, hour);
     printf("Состояние записано в %s.\n", DIARY_FILE);
+}
+
+void player_print_status_line(const Player* p)
+{
+    if (!p) return;
+    if (p->buff.type == STATUS_NONE) return;
+    printf("Статус: %s", status_name(p->buff.type));
+    if (p->buff.type == STATUS_BLEEDING)
+        printf(" (-%d HP/шаг)", p->buff.power);
+    if (p->buff.turns > 0) printf(" (осталось шагов: %d)", p->buff.turns);
+    printf("\n");
 }
 
 /* Крафт */
