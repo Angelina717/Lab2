@@ -32,4 +32,7 @@ void player_show_clock(int day, int hour);
 void player_rest(Player* p, int* day, int* hour);
 void player_pass_time(Player* p, int* day, int* hour);
 
+/* HUD-статус, включая кровотечение/оглушение */
+void player_print_status_line(const Player* p);
+
 #endif /* PLAYER_H */
