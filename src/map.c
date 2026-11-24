@@ -74,19 +74,9 @@ static int map_generate(Map* m)
     m->w = w;
 
     /* Генерируем ТОЛЬКО рамку-стену по краям, внутри — пол */
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            if (y == 0 || y == h - 1 || x == 0 || x == w - 1) {
-                c[y][x] = CH_WALL;
-            }
-            else {
-                c[y][x] = CH_FLOOR;
-            }
-        }
-    }
-
-    /* Блок с рандомными внутренними стенами удалён.
-       препятствиями будут сущности (T, R, M) из entity.c */
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            c[y][x] = (y == 0 || y == h - 1 || x == 0 || x == w - 1) ? CH_WALL : CH_FLOOR;
 
     return 1;
 }
