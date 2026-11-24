@@ -117,8 +117,7 @@ static void map_place_stair_up(Map* m, int hx, int hy)
     /* вычисляем координаты соседней клетки */
     for (int i = 0; i < 8; i++) {
         int nx = hx + dx[i], ny = hy + dy[i];
-        if (nx > 0 && nx < m->w - 1 && ny > 0 && ny < m->h - 1 &&
-            m->cells[ny][nx] == CH_FLOOR) {
+        if (nx > 0 && nx < m->w - 1 && ny > 0 && ny < m->h - 1 && m->cells[ny][nx] == CH_FLOOR) {
             vx[cnt] = nx; vy[cnt] = ny; cnt++;
         }
     }
@@ -126,10 +125,7 @@ static void map_place_stair_up(Map* m, int hx, int hy)
     else {
         for (int y = 1; y < m->h - 1; y++)
             for (int x = 1; x < m->w - 1; x++)
-                if (m->cells[y][x] == CH_FLOOR) {
-                    m->cells[y][x] = CH_STAIR_UP;
-                    return;
-                }
+                if (m->cells[y][x] == CH_FLOOR) { m->cells[y][x] = CH_STAIR_UP; return; }
     }
 }
 
@@ -159,11 +155,8 @@ static void map_place_stair_down(Map* m, int hx, int hy)
 
 static void print_hud(const Player* p, int floor_num, int day, int hour)
 {
-    printf("HP: %d/%d | Выносливость: %d/%d | Атака: %d | Защита: %d | "
-        "Золото: %d | Этаж: %d | Время: %02d:00 (День %d)\n",
-        p->hp, p->max_hp, p->stamina, p->max_stamina,
-        p->attack, p->defense, p->gold,
-        floor_num, hour, day);
+  printf("HP: %d/%d | Выносливость: %d/%d | Атака: %d | Защита: %d | Золото: %d | Этаж: %d | Время: %02d:00 (День %d)\n",
+    p->hp, p->max_hp, p->stamina, p->max_stamina, p->attack, p->defense, p->gold, floor_num, hour, day);  
 }
 
 /* Экстренная эвакуация (обморок)  */
@@ -172,8 +165,7 @@ static void emergency_evacuate(Player* p)
 {
     int lost = p->gold / EMERGENCY_GOLD_LOSS_DIV;
     p->gold -= lost;
-    printf("\n>>> ЭКСТРЕННАЯ ЭВАКУАЦИЯ! Спасатели забрали %d золота. <<<\n",
-        lost);
+    printf("\n>>> ЭКСТРЕННАЯ ЭВАКУАЦИЯ! Спасатели забрали %d золота. <<<\n", lost);
     p->hp = p->max_hp;
     p->stamina = p->max_stamina / 2;
     if (p->stamina < 1) p->stamina = 1;
@@ -189,10 +181,7 @@ static void write_adventure_diary(const Player* p, int day, int floor_num,
     const EntityArray* ea, const char* reason)
 {
     FILE* f = fopen(DIARY_FILE, "a");
-    if (!f) {
-        printf("[!] Не удалось открыть %s для записи отчёта.\n", DIARY_FILE);
-        return;
-    }
+    if (!f) return;
     fprintf(f, "\n=== Отчёт о вылазке ===\n");
     fprintf(f, "Фермер: %s\n", p->name);
     fprintf(f, "День %d, этаж %d\n", day, floor_num);
@@ -201,84 +190,53 @@ static void write_adventure_diary(const Player* p, int day, int floor_num,
         fprintf(f, "Добыто ресурсов: %d\n", ea->trees_destroyed);
         fprintf(f, "Побеждено монстров: %d\n", ea->monsters_killed);
     }
-    fprintf(f, "Золото: %d | HP: %d/%d | Выносливость: %d/%d\n",
-        p->gold, p->hp, p->max_hp, p->stamina, p->max_stamina);
+    fprintf(f, "Золото: %d | HP: %d/%d | Выносливость: %d/%d\n", p->gold, p->hp, p->max_hp, p->stamina, p->max_stamina);
     fclose(f);
     printf("Отчёт записан в %s.\n", DIARY_FILE);
 }
 
-/* Игровой цикл Input -> Update -> Render*/
+/* Игровой цикл */
 
 void adventure_mode(Player* p, int* day, int* hour)
 {
-    if (!p) { printf("[!] Сначала создайте персонажа.\n"); return; }
-    if (p->stamina <= 0) {
-        printf("[!] Выносливость равна 0 — нельзя отправиться в приключение.\n");
-        return;
-    }
-    if (*hour == 2) {
-        printf("[!] Сейчас 02:00 ночи — фермер должен спать.\n");
-        return;
-    }
+    if (!p || p->stamina <= 0) return;
+    if (p->hp <= 0) { printf("[!] Вы без сознания (HP = 0).\n"); return; }
+    if (*hour == 2) { printf("[!] Сейчас 02:00 ночи — пора спать.\n"); return; }
 
-    /*  Создание карты первого этажа  */
     Map* m = map_create(1);
-    if (!m) return;
-    if (!map_generate(m)) { map_destroy(&m); return; }
+    if (!m || !map_generate(m)) { if (m) map_destroy(&m); return; }
 
     int hx, hy;
-    if (!map_find_spawn(m, &hx, &hy)) {
-        printf("На карте нет свободного места для героя.\n");
-        map_destroy(&m);
-        return;
-    }
+    if (!map_find_spawn(m, &hx, &hy)) { map_destroy(&m); return; }
     map_place_stair_up(m, hx, hy);
     map_place_stair_down(m, hx, hy);
     p->x = hx; p->y = hy;
 
-    /*  Генерация сущностей этажа */
     int placed = 0;
     EntityArray* ea = entities_generate(m, hx, hy, m->floor_num, &placed);
     if (!ea) { map_destroy(&m); return; }
-
-    printf("\n=== Приключение началось! (Этаж 1 - Без тумана) ===\n");
-    printf("Карта %dx%d. Сущностей: %d.\n", m->w, m->h, placed);
-    printf("W/A/S/D — шаг или взаимодействие, Q — выход.\n");
 
     char last_event[MAX_LINE_LEN] = "Вы вошли в подземелье.";
     int  running = 1;
     const char* end_reason = "выход по Q";
 
     while (running) {
-        /*  Render */
-        int use_fog = (m->floor_num > 1);
-        entities_print_overlay(ea, m, hx, hy, use_fog);
+        entities_print_overlay(ea, m, hx, hy, (m->floor_num > 1));
         print_hud(p, m->floor_num, *day, *hour);
         player_print_status_line(p);
         printf("Последнее событие: %s\n", last_event);
         printf("Ваш ход: ");
 
-        /* Input */
         char cmd[8];
         if (fgets(cmd, sizeof(cmd), stdin) == NULL) { clear_input(); continue; }
         size_t len = strlen(cmd);
-        while (len > 0 && (cmd[len - 1] == '\n' || cmd[len - 1] == '\r'))
-            cmd[--len] = '\0';
-        if (len != 1) {
-            printf("Введите одну букву: W/A/S/D/Q.\n");
-            continue;
-        }
+        while (len > 0 && (cmd[len - 1] == '\n' || cmd[len - 1] == '\r')) cmd[--len] = '\0';
+        if (len != 1) continue;
 
         char c = cmd[0];
         if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
 
-        if (c == 'Q') {
-            snprintf(last_event, sizeof(last_event),
-                "Вы покинули подземелье на этаже %d.", m->floor_num);
-            end_reason = "выход по Q";
-            running = 0;
-            break;
-        }
+        if (c == 'Q') { running = 0; end_reason = "выход по Q"; break; }
 
         int dx = 0, dy = 0;
         switch (c) {
@@ -286,45 +244,32 @@ void adventure_mode(Player* p, int* day, int* hour)
         case 'A': dx = -1; break;
         case 'S': dy = +1; break;
         case 'D': dx = +1; break;
-        default:
-            printf("Неизвестная команда. Используйте W/A/S/D/Q.\n");
-            continue;
+        default: continue;
         }
 
-        /*  Update */
         int nx = hx + dx, ny = hy + dy;
-
-        /* Край карты */
-        if (nx < 0 || nx >= m->w || ny < 0 || ny >= m->h) {
-            snprintf(last_event, sizeof(last_event), "Край карты.");
-            continue;
-        }
-        /* Стена */
-        if (m->cells[ny][nx] == CH_WALL) {
-            snprintf(last_event, sizeof(last_event), "Там стена.");
+        if (nx < 0 || nx >= m->w || ny < 0 || ny >= m->h || m->cells[ny][nx] == CH_WALL) {
+            snprintf(last_event, sizeof(last_event), "Там стена или край карты.");
             continue;
         }
 
         Entity* e = entity_at(ea, nx, ny);
         if (e) {
-            /* На клетке есть сущность — взаимодействие (без шага) */
-            int ok = entity_interact(ea, p, m, nx, ny,
-                last_event, sizeof(last_event));
-            if (!ok) continue;
+            entity_interact(ea, p, m, nx, ny, last_event, sizeof(last_event));
 
+            /* МГНОВЕННАЯ ПРОВЕРКА СМЕРТИ В БОЮ */
             if (p->hp <= 0) {
-                end_reason = "обморок в бою";
+                printf("\n>>> Герой падает без сил! <<<\n");
+                end_reason = "смерть в бою";
                 emergency_evacuate(p);
                 running = 0;
                 break;
             }
         }
         else {
-            /* Обычный шаг */
             hx = nx; hy = ny;
             p->x = hx; p->y = hy;
 
-            /* статусы/выносливость (вариант 3 из ЛР5) */
             int used = 1;
             player_apply_status_step(p, &used);
             p->stamina -= used;
@@ -332,60 +277,51 @@ void adventure_mode(Player* p, int* day, int* hour)
             player_try_inflict_status(p);
 
             snprintf(last_event, sizeof(last_event), "Вы сделали шаг.");
+
+            /* Проверка смерти от эффектов (яд/кровотечение) */
+            if (p->hp <= 0) {
+                printf("\n>>> Герой падает без сил! <<<\n");
+                end_reason = "смерть от эффектов";
+                emergency_evacuate(p);
+                running = 0;
+                break;
+            }
         }
 
-        /* Общие проверки после хода */
-        if (p->hp <= 0 || p->stamina <= 0) {
+        if (p->stamina <= 0) {
             printf("\n>>> Герой падает без сил! <<<\n");
-            end_reason = "обморок от истощения";
+            end_reason = "обморок (нет выносливости)";
             emergency_evacuate(p);
             running = 0;
             break;
         }
 
-        /*  Спуск на новый этаж  */
         if (m->cells[hy][hx] == CH_STAIR_DOWN) {
-            printf("\n>>> Вы спускаетесь на этаж ниже... <<<\n");
-
             if (p->stamina < STAIR_STAMINA_COST) {
-                printf("Не хватает выносливости на спуск (нужно %d, есть %d).\n",
-                    STAIR_STAMINA_COST, p->stamina);
+                printf("Не хватает выносливости на спуск.\n");
                 continue;
             }
             p->stamina -= STAIR_STAMINA_COST;
-
             *hour += 1;
             if (*hour >= 24) { *hour = 0; *day += 1; }
 
             int new_floor = m->floor_num + 1;
-            int reward = FLOOR_GOLD_BASE * new_floor;
-            p->gold += reward;
-            printf("Награда за этаж %d: +%d золота.\n", new_floor, reward);
+            p->gold += FLOOR_GOLD_BASE * new_floor;
 
             if (*hour == 2) {
                 printf(">>> 02:00 ночи — герой засыпает на ходу! <<<\n");
-                end_reason = "сон на ходу в 02:00";
+                end_reason = "сон в 02:00";
                 emergency_evacuate(p);
                 running = 0;
                 break;
             }
 
-            /*  Пересборка этажа */
             map_destroy(&m);
             entities_destroy(&ea);
 
             m = map_create(new_floor);
-            if (!m || !map_generate(m)) {
-                if (m) map_destroy(&m);
-                ea = NULL;
-                break;
-            }
-            if (!map_find_spawn(m, &hx, &hy)) {
-                printf("Ошибка спавна героя на новом этаже.\n");
-                map_destroy(&m);
-                ea = NULL;
-                break;
-            }
+            if (!m || !map_generate(m)) { if (m) map_destroy(&m); break; }
+            if (!map_find_spawn(m, &hx, &hy)) { map_destroy(&m); break; }
             map_place_stair_up(m, hx, hy);
             map_place_stair_down(m, hx, hy);
             p->x = hx; p->y = hy;
@@ -393,20 +329,12 @@ void adventure_mode(Player* p, int* day, int* hour)
             int new_placed = 0;
             ea = entities_generate(m, hx, hy, new_floor, &new_placed);
             if (!ea) { map_destroy(&m); break; }
-
-            snprintf(last_event, sizeof(last_event),
-                "Вы на этаже %d. Сущностей: %d.", new_floor, new_placed);
-
-            if (new_floor == 2)
-                printf("\n=== ВНИМАНИЕ: темно (туман войны). Радиус %d. ===\n",
-                    FOG_RADIUS);
+            snprintf(last_event, sizeof(last_event), "Вы на этаже %d. Сущностей: %d.", new_floor, new_placed);
         }
     }
 
-    /*  Дневник похода */
-    int final_floor = m ? m->floor_num : 0;
-    write_adventure_diary(p, *day, final_floor, ea, end_reason);
-
+     /*  Дневник похода */
+    write_adventure_diary(p, *day, m ? m->floor_num : 0, ea, end_reason);
     /* Освобождение памяти */
     if (ea) entities_destroy(&ea);
     if (m)  map_destroy(&m);
