@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include "common.h"
+#include <stddef.h> /* Для size_t  */
 
 /* Защита от «дурака» */
 void clear_input(void);
