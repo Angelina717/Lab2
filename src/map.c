@@ -15,14 +15,10 @@
 static char** alloc_cells(int h, int w)
 {
     char** c = (char**)malloc((size_t)h * sizeof(char*));
-    if (!c) {
-        printf("Ошибка выделения памяти под строки карты!\n");
-        return NULL;
-    }
+    if (!c) { printf("Ошибка выделения памяти!\n"); return NULL; }
     for (int i = 0; i < h; i++) {
         c[i] = (char*)malloc((size_t)w * sizeof(char));
         if (!c[i]) {
-            printf("Ошибка выделения памяти под строку %d!\n", i);
             for (int j = 0; j < i; j++) free(c[j]);
             free(c);
             return NULL;
