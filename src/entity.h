@@ -2,6 +2,7 @@
 #define ENTITY_H
 
 #include "common.h"
+#include <stddef.h> /* Для size_t */
 
 /* Тип сущности на карте */
 typedef enum EntityType {
