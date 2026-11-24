@@ -72,15 +72,6 @@ const char* status_name(StatusEffect s)
     }
 }
 
-void player_print_buff(const Player* p)
-{
-    if (!p) return;
-    printf("Статус:        %s", status_name(p->buff.type));
-    if (p->buff.type != STATUS_NONE && p->buff.turns > 0)
-        printf(" (осталось шагов: %d)", p->buff.turns);
-    printf("\n");
-}
-
 /* Попытка наложить новый эффект (5% шанс на шаге) */
 void player_try_inflict_status(Player* p)
 {
@@ -98,11 +89,19 @@ void player_try_inflict_status(Player* p)
         status_name(p->buff.type), p->buff.turns);
 }
 
+void player_print_status_line(const Player* p)
+{
+    if (!p || p->buff.type == STATUS_NONE) return;
+    printf("Статус: %s", status_name(p->buff.type));
+    if (p->buff.type == STATUS_BLEEDING) printf(" (-%d HP/шаг)", p->buff.power);
+    if (p->buff.turns > 0) printf(" (осталось шагов: %d)", p->buff.turns);
+    printf("\n");
+}
+
 /* Применить эффект на текущем шаге. Возвращает фактический расход выносливости. */
 void player_apply_status_step(Player* p, int* used_stamina_out)
 {
     if (!p || !used_stamina_out) return;
-
     int cost = 1;
     if (p->buff.type == STATUS_SPRAIN)    cost *= STATUS_SPRAIN_MULT;
     if (p->buff.type == STATUS_ENERGIZED) cost = STATUS_BUFF_FREE_COST;
@@ -127,7 +126,6 @@ void player_apply_status_step(Player* p, int* used_stamina_out)
             p->buff.power = 0;
         }
     }
-
     *used_stamina_out = cost;
 }
 
@@ -139,16 +137,15 @@ void player_print_card(const Player* p, int day, int hour)
     printf("Имя:           %s\n", p->name);
     printf("HP:            %d/%d\n", p->hp, p->max_hp);
     printf("Выносливость:  %d/%d\n", p->stamina, p->max_stamina);
-    printf("Золото:        %d\n", p->gold);
     printf("Атака:         %d\n", p->attack);
     printf("Защита:        %d\n", p->defense);
+    printf("Золото:        %d\n", p->gold);
     printf("Позиция:       (%d, %d)\n", p->x, p->y);
     printf("Время:         День %d, %02d:00\n", day, hour);
-    player_print_buff(p);
+    player_print_status_line(p);
     printf("Инвентарь:\n");
     for (int i = 0; i < INVENTORY_SIZE; i++)
-        printf("  Слот %d: [%d] %s\n", i, p->inventory[i],
-            get_item_name(p->inventory[i]));
+        printf("  Слот %d: [%d] %s\n", i, p->inventory[i], get_item_name(p->inventory[i]));
 }
 
 void player_print_inventory(const Player* p)
@@ -156,8 +153,7 @@ void player_print_inventory(const Player* p)
     if (!p) { printf("[!] Персонаж не создан.\n"); return; }
     printf("\n--- Инвентарь ---\n");
     for (int i = 0; i < INVENTORY_SIZE; i++)
-        printf("Слот %d: [%d] - %s\n",
-            i, p->inventory[i], get_item_name(p->inventory[i]));
+        printf("Слот %d: [%d] - %s\n", i, p->inventory[i], get_item_name(p->inventory[i]));
 }
 
 /* Положить предмет в слот*/
@@ -230,7 +226,7 @@ void player_find_item(const Player* p)
 /* Дневник */
 void player_write_diary(const Player* p, int day, int hour)
 {
-    if (!p) { printf("[!] Персонаж не создан.\n"); return; }
+    if (!p) return;
     FILE* f = fopen(DIARY_FILE, "a");
     if (f == NULL) { printf("Не удалось открыть %s для записи!\n", DIARY_FILE); return; }
 
@@ -242,8 +238,7 @@ void player_write_diary(const Player* p, int day, int hour)
     fprintf(f, "Статус: %s\n", status_name(p->buff.type));
     fprintf(f, "Инвентарь:\n");
     for (int i = 0; i < INVENTORY_SIZE; i++)
-        fprintf(f, "  Слот %d: [%d] - %s\n",
-            i, p->inventory[i], get_item_name(p->inventory[i]));
+        fprintf(f, "  Слот %d: [%d] - %s\n", i, p->inventory[i], get_item_name(p->inventory[i]));
     fprintf(f, "\n");
     fclose(f);
 
@@ -251,17 +246,6 @@ void player_write_diary(const Player* p, int day, int hour)
     printf("Фермер: %s\n", p->name);
     printf("День %d, %02d:00\n", day, hour);
     printf("Состояние записано в %s.\n", DIARY_FILE);
-}
-
-void player_print_status_line(const Player* p)
-{
-    if (!p) return;
-    if (p->buff.type == STATUS_NONE) return;
-    printf("Статус: %s", status_name(p->buff.type));
-    if (p->buff.type == STATUS_BLEEDING)
-        printf(" (-%d HP/шаг)", p->buff.power);
-    if (p->buff.turns > 0) printf(" (осталось шагов: %d)", p->buff.turns);
-    printf("\n");
 }
 
 /* Крафт */
