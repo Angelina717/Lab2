@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -15,7 +16,8 @@ static void print_menu(const Player* p, int day, int hour)
     printf("\n===== Весёлый фермер (ЛР5, вариант 3) =====\n");
     if (p)
         printf("Фермер: %s | HP %d/%d | Атака %d | Защита %d | Золото %d\n",
-            p->name, p->hp, p->max_hp, p->attack, p->defense, p->gold);
+            p->name, p->hp, p->max_hp, p->stamina, p->max_stamina,
+            p->attack, p->defense, p->gold);
     else
         printf("Фермер: не создан\n");
     printf("Время: День %d, %02d:00\n", day, hour);
